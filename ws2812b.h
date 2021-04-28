@@ -11,7 +11,7 @@
 #define PIN        1 // On Trinket or Gemma, suggest changing this to 1
 
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS 60 // Popular NeoPixel ring size
+#define NUMPIXELS 12 // Popular NeoPixel ring size
 
 // When setting up the NeoPixel library, we tell it how many pixels,
 // and which pin to use to send signals. Note that for older NeoPixel
@@ -21,14 +21,13 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 int DELAYVAL = 50; // Time (in milliseconds) to pause between pixels
 
-//根据led数量算出彩虹的各led的颜色
-uint32_t colors[NUMPIXELS];
-
 //黑灯时的颜色值
 uint32_t black=pixels.Color(0,0,0);
 
 //流水线的每一步的显示类型
 uint8_t flow[8];
+
+uint8_t step = 128;
 
 //是否开启流水线
 bool hasFlow=false;
@@ -46,7 +45,13 @@ void begin() {
 
 //设置亮度
 void setBrightness(int brightness){
-  pixels.setBrightness(brightness+1);
+  if(brightness<=0){
+    brightness=1;
+  }else if(brightness>100){
+    brightness=100;
+  }
+  
+  pixels.setBrightness(brightness*2.55);
   pixels.show();
 }
 
@@ -101,38 +106,55 @@ void colorfour(bool needDelay){
 ////    }
 //}
 
-//彩灯渐变
+//所有灯同时渐变的彩灯渐变效果
 void tRainbow(int wait)
 {
     // Hue of first pixel runs 5 complete loops through the color wheel.
     // Color wheel has a range of 65536 but it's OK if we roll over, so
     // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
     // means we'll make 5*65536/256 = 1280 passes through this outer loop:
-    for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256)
+    long firstPixelHue=0;
+    for (long i = 0; i < step; i++)
     {
+       firstPixelHue+=256;
        uint32_t color = pixels.gamma32(pixels.ColorHSV(firstPixelHue));
-    
+    if(!hasFlow){
+      return;
+    }
         for (int i = 0; i < NUMPIXELS; i++)
-        { // For each pixel in strip...
-            // Offset pixel hue by an amount to make one full revolution of the
-            // color wheel (range of 65536) along the length of the strip
-            // (strip.numPixels() steps):
-//            int pixelHue = 0 + (i * 65536L / NUMPIXELS);
-            // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
-            // optionally add saturation and value (brightness) (each 0 to 255).
-            // Here we're using just the single-argument hue variant. The result
-            // is passed through strip.gamma32() to provide 'truer' colors
-            // before assigning to each pixel:
+        { 
             pixels.setPixelColor(i,color);
              
         }
         pixels.show(); // Update strip with new contents
-            delay(wait);  // Pause for a moment
+        delay(DELAYVAL);  // Pause for a moment
        
     }
 }
 
-//彩灯渐变
+void toGradintColor(uint32_t start,uint32_t end,uint8_t step){
+    uint32_t firstPixelHue=start;
+//    uint32_t offset = (end-start)/step;
+    for (long i = 1; i < step+1; i++)
+    {
+       
+       uint32_t color = pixels.gamma32(pixels.ColorHSV(i*256));
+        if(!hasFlow){
+          return;
+        }
+        for (int i = 0; i < NUMPIXELS; i++)
+        { 
+            pixels.setPixelColor(i,color);
+             
+        }
+//        firstPixelHue+=offset;
+        pixels.show(); // Update strip with new contents
+        delay(DELAYVAL);  // Pause for a moment
+       
+    }
+}
+
+//流水效果彩灯渐变
 void rainbow(int wait)
 {
     // Hue of first pixel runs 5 complete loops through the color wheel.
@@ -143,6 +165,9 @@ void rainbow(int wait)
 //    {
         for (int i = 0; i < NUMPIXELS; i++)
         { // For each pixel in strip...
+          if(!hasFlow){
+           return;
+          }
             // Offset pixel hue by an amount to make one full revolution of the
             // color wheel (range of 65536) along the length of the strip
             // (strip.numPixels() steps):
@@ -168,7 +193,9 @@ void toLight(uint32_t color){
   // to the count of pixels minus one.
   
   for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
-
+    if(!hasFlow){
+      return;
+    }
     // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
     // Here we're using a moderately bright green color:
     pixels.setPixelColor(i, color);
@@ -192,9 +219,8 @@ uint32_t getGradientColors(){
   
 }
 
-uint32_t toColor(uint32_t colors[]){
-  
-  return pixels.Color(colors[0],colors[1],colors[2]);
+uint32_t toColor(int hsvColor){
+  return pixels.ColorHSV(hsvColor);
 }
 
 void setFlowColor(uint32_t color){
@@ -205,11 +231,18 @@ void setFlow(){
   
 }
 
+void setIsFlow(bool isFlow){
+  hasFlow=isFlow;
+}
+
 void runFlow(){
 //   toLight(flowColor);
 //   toBlack(flowColor);
-   rainbow(DELAYVAL);
+if(hasFlow){
+//   rainbow(DELAYVAL);
+//   toBlack(flowColor);
+   toGradintColor(pixels.Color(255,0,0),pixels.Color(0,255,0),254);
+//   tRainbow(DELAYVAL);
    toBlack(flowColor);
-   tRainbow(DELAYVAL);
-   toBlack(flowColor);
+}
 }

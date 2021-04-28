@@ -46,6 +46,7 @@ void startServer(){
    server.on("/setBrightness", HTTP_GET, [](AsyncWebServerRequest *request) {
       if(request->hasParam("brightness")){ //Check if FILE was uploaded
         int brightness = request->getParam("brightness")->value().toInt();
+        setIsFlow(false);
         setBrightness(brightness);
         request->send(200, "text/plain", "成功");
       }else{
@@ -54,40 +55,40 @@ void startServer(){
     });
 
     server.on("/flow", HTTP_GET, [](AsyncWebServerRequest *request) {
-      isFlow=true;
+      setIsFlow(true);
       if(request->hasParam("color")){
         AsyncWebParameter* p = request->getParam("color");
-        String color= p->value().c_str();
-        Serial.println(color);
-        DynamicJsonDocument doc(100);
-        deserializeJson(doc, color);
-        JsonArray arr = doc.as<JsonArray>();
-        
-        uint32_t colors[3] ;
-        for(int i=0;i<3;i++){
-          colors[i] = arr[i].as<uint32_t>();
-        }
-        setFlowColor(toColor(colors));
+        int color= p->value().toInt();
+//        Serial.println(color);
+//        DynamicJsonDocument doc(100);
+//        deserializeJson(doc, color);
+//        JsonArray arr = doc.as<JsonArray>();
+//        
+//        uint32_t colors[3] ;
+//        for(int i=0;i<3;i++){
+//          colors[i] = arr[i].as<uint32_t>();
+//        }
+        setFlowColor(toColor(color));
       }
       
       request->send(200, "text/plain", "成功");
     });
 
    server.on("/setColor", HTTP_GET, [](AsyncWebServerRequest *request) {
-    isFlow=false;
+    setIsFlow(false);
     if(request->hasParam("color")){ //Check if FILE was uploaded
       AsyncWebParameter* p = request->getParam("color");
-      String color= p->value().c_str();
-      Serial.println(color);
-      DynamicJsonDocument doc(100);
-      deserializeJson(doc, color);
-      JsonArray arr = doc.as<JsonArray>();
-      
-      uint32_t colors[3] ;
-      for(int i=0;i<3;i++){
-        colors[i] = arr[i].as<uint32_t>();
-      }
-      setColor(toColor(colors));
+      int color= p->value().toInt();
+//      Serial.println(color);
+//      DynamicJsonDocument doc(100);
+//      deserializeJson(doc, color);
+//      JsonArray arr = doc.as<JsonArray>();
+//      
+//      uint32_t colors[3] ;
+//      for(int i=0;i<3;i++){
+//        colors[i] = arr[i].as<uint32_t>();
+//      }
+      setColor(toColor(color));
       request->send(200, "text/plain", "成功");
       Serial.println("成功");
     }else{
@@ -103,7 +104,5 @@ void startServer(){
 }
 
 void runLedFlow(){
-  if(isFlow){
     runFlow();
-  }
 }
