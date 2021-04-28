@@ -1,0 +1,51 @@
+//#include <server.h>  
+
+
+
+void notFound(AsyncWebServerRequest *request)
+{
+  request->send(404, "text/plain", "Not found");
+}
+
+
+void startServer(){
+  if(SPIFFS.begin()){                       // 启动闪存文件系统
+    Serial.println("SPIFFS Started.");
+  } else {
+    Serial.println("SPIFFS Failed to Start.");
+  }
+
+  Serial.println("HTTP server started");
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("请求根路径.");
+    String content="";
+    if (SPIFFS.exists("/index.html")) {                     // 如果访问的文件可以在SPIFFS中找到
+    File file = SPIFFS.open("/index.html", "r");          // 则尝试打开该文件
+    content = file.readString();
+    file.close();                                // 并且关闭文件                   
+    }else{
+      Serial.println("文件不存在");
+    }
+    request->send(200, "text/html", content);
+  });
+
+  server.onNotFound(notFound);
+
+  //启动 web 服务器
+  server.begin();
+}
+
+
+//String getContent(String url){
+//  url=url.substr(1);
+//  if(url.equals("")){
+//    url="index.html";
+//  }
+//  if (SPIFFS.exists(url)) {                     // 如果访问的文件可以在SPIFFS中找到
+//    File file = SPIFFS.open(url, "r");          // 则尝试打开该文件
+//    String content = file.readString();
+//    file.close();                                // 并且关闭文件
+//    return content;                       
+//  }
+//}

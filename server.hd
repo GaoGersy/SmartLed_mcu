@@ -1,0 +1,9 @@
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <FS.h> 
+
+AsyncWebServer server(80);
+
+void startServer();
+
+void notFound(AsyncWebServerRequest *request);
